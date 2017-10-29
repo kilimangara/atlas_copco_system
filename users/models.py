@@ -1,8 +1,9 @@
 from django.db import models
 from django.contrib.auth.hashers import make_password
-from django.contrib.auth.models import BaseUserManager, AbstractBaseUser
+from django.contrib.auth.models import AbstractBaseUser
 import base64
 
+from phonenumber_field.modelfields import PhoneNumberField
 
 
 class User(models.Model):
@@ -11,8 +12,8 @@ class User(models.Model):
     last_login = models.DateTimeField(null=True, blank=True)
     password = models.CharField(max_length=128)
     is_admin = models.BooleanField(default=False)
-    account = models.ForeignKey('Account', on_delete=models.CASCADE, related_name='staff', null=True)
-    confirmation_token = models.CharField(max_length=48)
+    account = models.ForeignKey('Account', on_delete=models.CASCADE, related_name='staff', null=True, blank=True)
+    confirmation_token = models.CharField(max_length=48, blank=True)
     token = models.CharField(max_length=128)
 
     USERNAME_FIELD = 'email'
@@ -41,9 +42,9 @@ class User(models.Model):
 
 
 class Account(models.Model):
-    address = models.CharField(max_length=255, null=False, blank=False)
+    address = models.OneToOneField('Address')
     is_admin = models.BooleanField(default=False)
-    slug = models.SlugField()
+    slug = models.SlugField(unique=True)
     name = models.CharField(max_length=255, null=False, blank=False)
 
     def add_user(self, email):
@@ -56,9 +57,17 @@ class Account(models.Model):
             return True
         return False
 
+    def __str__(self):
+        return self.name
 
 
-
+class Address(models.Model):
+    contact_name = models.CharField(max_length=255, blank=True)
+    contact_phone = PhoneNumberField(blank=True)
+    city = models.CharField(max_length=255, blank=True)
+    street = models.CharField(max_length=255, blank=True)
+    zip = models.CharField(max_length=20, blank=True)
+    house = models.CharField(max_length=7, blank=True)
 
 
 class AccountEmailCash(models.Model):

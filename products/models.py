@@ -17,10 +17,13 @@ TYPES = (
 class Product(models.Model):
     title = models.CharField(max_length=255)
     sku = models.SlugField(max_length=255, unique=True)
+    number = models.FloatField(blank=True)
+    number_for_order = models.CharField(max_length=10)
     quantity = models.BigIntegerField(default=0)
     responsible = models.ForeignKey('users.Account', models.CASCADE, related_name='products')
     location_update = models.DateTimeField(null=True)
     comment = models.CharField(max_length=255)
+    on_repair = models.BooleanField(default=False)
 
 
 class InvoiceChanges(models.Model):

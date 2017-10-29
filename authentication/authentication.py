@@ -12,8 +12,8 @@ class BasicAuthentication(TokenAuthentication):
     def authenticate_credentials(self, key):
         try:
             user = User.objects.get(token=key)
-            user.last_login = timezone.now()
-            user.save()
+            # user.last_login = timezone.now()
+            # user.save()
         except ObjectDoesNotExist:
             raise AuthenticationFailed()
         return user, key

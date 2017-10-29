@@ -29,14 +29,20 @@ class CreateUserSerializer(serializers.Serializer, ErrorToString):
         return attrs
 
 
-class UserSerializer(serializers.ModelSerializer):
-
-    class Meta:
-        model = User
-        exclude = ('token', 'confirmation_token', 'password')
-
-
 class AccountSerializer(serializers.ModelSerializer):
     class Meta:
         model = Account
         fields = '__all__'
+
+
+class ImportUserSerializer(serializers.Serializer):
+    email = serializers.EmailField(required=True)
+
+
+class UserSerializer(serializers.ModelSerializer):
+
+    account = AccountSerializer()
+
+    class Meta:
+        model = User
+        exclude = ('token', 'confirmation_token', 'password')
