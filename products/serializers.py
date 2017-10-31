@@ -1,17 +1,24 @@
 from rest_framework import serializers
 
 from products.models import Product
-from users.serializers import AccountSerializer
 
 
 class ProductSerializer(serializers.ModelSerializer):
 
     def to_representation(self, instance):
-        admin = instance.responsible.get_admin()
         data = super().to_representation(instance)
-        data.update({'responsible': admin.name})
+        data.update({'responsible': instance.responsible.name})
         return data
 
     class Meta:
         model = Product
         fields = '__all__'
+
+
+class ResponsibleFilter(serializers.Serializer):
+    show_own = serializers.NullBooleanField(default=None, required=False)
+
+
+
+class CreateInvoiceSerializer(serializers.Serializer):
+    products = serializers.PrimaryKeyRelatedField(many=True, queryset=Product.objects.all())

@@ -70,6 +70,9 @@ class Address(models.Model):
     zip = models.CharField(max_length=20, blank=True)
     house = models.CharField(max_length=7, blank=True)
 
+    def __str__(self):
+        return '{} {} {}'.format(self.street, self.house, self.contact_name )
+
 
 class AccountEmailCash(models.Model):
     account = models.ForeignKey('Account', models.CASCADE, related_name='email_cash')
