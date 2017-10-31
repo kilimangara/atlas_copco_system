@@ -13,6 +13,12 @@ TYPES = (
     (2, 'Ремонт')
 )
 
+TARGETS = (
+    (0, 'Выставка'),
+    (1, 'Демонстрация'),
+    (2, 'Семинар'),
+    (3, 'Возврат')
+)
 
 class Product(models.Model):
     title = models.CharField(max_length=255)
@@ -40,3 +46,4 @@ class Invoice(models.Model):
     address = models.CharField(max_length=255)
     from_account = models.ForeignKey('users.Account', models.CASCADE, related_name='out_invoices')
     to_account = models.ForeignKey('users.Account', models.CASCADE, related_name='in_invoices')
+    target = models.IntegerField(choices=TARGETS, null=True)

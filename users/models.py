@@ -1,7 +1,5 @@
 from django.db import models
-from django.contrib.auth.hashers import make_password
 from django.contrib.auth.models import AbstractBaseUser
-import base64
 
 from phonenumber_field.modelfields import PhoneNumberField
 
@@ -42,7 +40,7 @@ class User(models.Model):
 
 
 class Account(models.Model):
-    address = models.OneToOneField('Address')
+    address = models.OneToOneField('Address', models.CASCADE, related_name='account', null=True, blank=True)
     is_admin = models.BooleanField(default=False)
     slug = models.SlugField(unique=True)
     name = models.CharField(max_length=255, null=False, blank=False)

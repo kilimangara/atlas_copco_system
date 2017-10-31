@@ -1,7 +1,8 @@
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
 from ara.error_types import PASSWORD_INCORRECT
-from users.models import User, Account
+from users.models import User, Account, Address
+
 
 class ErrorToString(object):
     @property
@@ -29,10 +30,21 @@ class CreateUserSerializer(serializers.Serializer, ErrorToString):
         return attrs
 
 
+class AddressSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = Address
+        exclude = ('account',)
+
 class AccountSerializer(serializers.ModelSerializer):
+
+    account = AddressSerializer()
+
     class Meta:
         model = Account
         fields = '__all__'
+
+
 
 
 class ImportUserSerializer(serializers.Serializer):
