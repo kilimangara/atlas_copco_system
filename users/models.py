@@ -55,6 +55,9 @@ class Account(models.Model):
             return True
         return False
 
+    def get_admin(self):
+        return self.staff.filter(is_admin=True).first()
+
     def __str__(self):
         return self.name
 

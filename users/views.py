@@ -7,7 +7,8 @@ from base64 import b64encode
 from ara.error_types import NO_PERMISSION
 from authentication.authentication import BasicAuthentication
 from users.models import User, AccountEmailCash
-from users.serializers import CreateUserSerializer, UserSerializer, AccountSerializer, ImportUserSerializer
+from users.serializers import CreateUserSerializer, UserSerializer, AccountSerializer, ImportUserSerializer, \
+    AddressSerializer
 from ara.response import SuccessResponse, ErrorResponse
 from .permissions import AdminUserPermission
 
@@ -26,7 +27,7 @@ def create_user(request):
     password = serializer.validated_data['password']
     name = serializer.validated_data['name']
     token = to_base64(email, password)
-    cash_account = AccountEmailCash.objects.get(email=email)
+    cash_account = AccountEmailCash.objects.filter(email=email).first()
     account = cash_account.account if cash_account is not None else None
     user = User.objects.create(email=email, name=name, password=make_password(password), token=token, account=account)
     return SuccessResponse(UserSerializer(user).data, status.HTTP_201_CREATED)
@@ -57,6 +58,13 @@ def account(request):
     if request.method == 'PUT':
         if not user.is_admin:
             return ErrorResponse(NO_PERMISSION, status.HTTP_403_FORBIDDEN)
+        if current_account.address is not None:
+            address_serializer = AddressSerializer(current_account.address, data=request.data, partial=True)
+        else:
+            address_serializer = AddressSerializer(data=request.data)
+        address_serializer.is_valid(raise_exception=True)
+        address = address_serializer.save()
+        current_account.address = address
         account_serializer = AccountSerializer(current_account, data=request.data, partial=True)
         account_serializer.is_valid(raise_exception=True)
         account_serializer.save()

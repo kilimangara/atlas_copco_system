@@ -34,16 +34,15 @@ class AddressSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Address
-        exclude = ('account',)
+        fields = '__all__'
 
 class AccountSerializer(serializers.ModelSerializer):
 
-    account = AddressSerializer()
+    address = AddressSerializer()
 
     class Meta:
         model = Account
         fields = '__all__'
-
 
 
 
