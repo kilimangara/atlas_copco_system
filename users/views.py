@@ -8,7 +8,7 @@ from ara.error_types import NO_PERMISSION
 from authentication.authentication import BasicAuthentication
 from users.models import User, AccountEmailCash
 from users.serializers import CreateUserSerializer, UserSerializer, AccountSerializer, ImportUserSerializer, \
-    AddressSerializer
+    AddressSerializer, PasswordSerializer
 from ara.response import SuccessResponse, ErrorResponse
 from .permissions import AdminUserPermission
 
@@ -47,6 +47,21 @@ def get_user(request):
         return SuccessResponse(user_serializer.data, status.HTTP_200_OK)
 
 
+@api_view(['POST'])
+@authentication_classes([BasicAuthentication])
+@permission_classes([IsAuthenticated])
+def change_password(request):
+    user = request.user
+    password_serializer = PasswordSerializer(data=request.data)
+    if not password_serializer.is_valid():
+        return ErrorResponse(password_serializer.errors_to_text, status.HTTP_400_BAD_REQUEST)
+    password = password_serializer.validated_data['password']
+    user.password = make_password(password)
+    user.token = to_base64(user.email, password)
+    user.save()
+    return SuccessResponse(UserSerializer(user).data, status.HTTP_200_OK)
+
+
 @api_view(['GET', 'PUT'])
 @authentication_classes([BasicAuthentication])
 @permission_classes([IsAuthenticated])
@@ -83,4 +98,11 @@ def add_to_account(request):
     import_serializer.is_valid(raise_exception=True)
     added = current_account.add_user(import_serializer.validated_data['email'])
     return SuccessResponse({'status': added}, status.HTTP_200_OK)
+
+
+@api_view(['GET'])
+@authentication_classes([BasicAuthentication])
+@permission_classes([IsAuthenticated])
+def get_addresses(request):
+    pass
 

@@ -71,7 +71,7 @@ class Address(models.Model):
     house = models.CharField(max_length=7, blank=True)
 
     def __str__(self):
-        return '{} {} {}'.format(self.street, self.house, self.contact_name )
+        return '{} {} {}'.format(self.street, self.house, self.contact_name)
 
 
 class AccountEmailCash(models.Model):

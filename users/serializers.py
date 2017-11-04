@@ -57,3 +57,14 @@ class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         exclude = ('token', 'confirmation_token', 'password')
+
+
+class PasswordSerializer(serializers.Serializer):
+    password = serializers.CharField(max_length=50)
+    password_confirmation = serializers.CharField(max_length=50)
+
+    def validate(self, attrs):
+        print(attrs)
+        if not attrs['password'] == attrs['password_confirmation']:
+            raise ValidationError(PASSWORD_INCORRECT)
+        return attrs
