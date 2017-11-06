@@ -31,7 +31,7 @@ class Product(models.Model):
     location_update = models.DateTimeField(null=True)
     comment = models.CharField(max_length=255)
     on_repair = models.BooleanField(default=False)
-    type_filter = models.CharField(max_length=255, null=True, default='')
+    type_filter = models.CharField(max_length=255, null=True, default='', db_index=True)
 
     def __str__(self):
         return '{} {}'.format(self.title, self.sku)
@@ -48,7 +48,7 @@ class Invoice(models.Model):
     updated_at = models.DateTimeField(auto_now_add=True)
     invoice_lines = models.ManyToManyField('Product')
     comment = models.CharField(max_length=255)
-    address = models.OneToOneField('users.Address')
+    address = models.ForeignKey('users.Address')
     invoice_type = models.IntegerField(choices=TYPES, default=0)
     from_account = models.ForeignKey('users.Account', models.CASCADE, related_name='out_invoices')
     to_account = models.ForeignKey('users.Account', models.CASCADE, related_name='in_invoices')

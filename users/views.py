@@ -1,16 +1,16 @@
+from django.core.exceptions import ObjectDoesNotExist
 from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes, authentication_classes
 from rest_framework.permissions import IsAuthenticated
 from django.contrib.auth.hashers import make_password
 from base64 import b64encode
 
-from ara.error_types import NO_PERMISSION
+from ara.error_types import NO_PERMISSION, INCORRECT_ID_PATTERN
 from authentication.authentication import BasicAuthentication
-from users.models import User, AccountEmailCash
+from users.models import User, AccountEmailCash, Address
 from users.serializers import CreateUserSerializer, UserSerializer, AccountSerializer, ImportUserSerializer, \
     AddressSerializer, PasswordSerializer
 from ara.response import SuccessResponse, ErrorResponse
-from .permissions import AdminUserPermission
 
 
 def to_base64(email, password):
@@ -103,6 +103,10 @@ def add_to_account(request):
 @api_view(['GET'])
 @authentication_classes([BasicAuthentication])
 @permission_classes([IsAuthenticated])
-def get_addresses(request):
-    pass
+def get_addresses(request, address_id):
+    try:
+        address = Address.objects.get(pk=address_id)
+    except ObjectDoesNotExist:
+        return ErrorResponse(INCORRECT_ID_PATTERN.format('Адресс', address_id), status.HTTP_404_NOT_FOUND)
+    return SuccessResponse(AddressSerializer(address).data, status.HTTP_200_OK)
 

@@ -102,7 +102,7 @@ REST_FRAMEWORK = {
     ],
     'EXCEPTION_HANDLER': 'ara.response.custom_exception_handler',
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.LimitOffsetPagination',
-    'PAGE_SIZE': 1
+    'PAGE_SIZE': 2
 }
 
 
