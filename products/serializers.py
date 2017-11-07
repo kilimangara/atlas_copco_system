@@ -13,6 +13,7 @@ class ProductSerializer(serializers.ModelSerializer):
     class Meta:
         model = Product
         exclude = ('responsible', )
+        read_only_fields = ('sku', 'location_update', 'on_transition', 'type_filter')
 
 
 class ResponsibleFilter(serializers.Serializer):

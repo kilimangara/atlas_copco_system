@@ -86,7 +86,10 @@ def show_product(request, product_id):
     if request.method == 'GET':
         return SuccessResponse(ProductSerializer(product).data, status.HTTP_200_OK)
     elif request.method == 'PUT':
-        return SuccessResponse()
+        product_serializer = ProductSerializer(product, data=request.data, partial=True)
+        product_serializer.is_valid(raise_exception=True)
+        product_serializer.save()
+        return SuccessResponse(product_serializer.data, status.HTTP_200_OK)
 
 
 @api_view(['POST'])
