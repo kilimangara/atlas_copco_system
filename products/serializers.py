@@ -83,5 +83,6 @@ class InvoiceSerializer(serializers.ModelSerializer):
     class Meta:
         model = Invoice
         fields = '__all__'
-        read_only_fields = ('from_account', 'to_account', 'invoice_lines', 'address')
+        read_only_fields = ('from_account', 'to_account', 'invoice_lines', 'address', 'created_at', 'updated_at',
+                            'comment', 'target')
 

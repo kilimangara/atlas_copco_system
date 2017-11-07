@@ -1,4 +1,6 @@
 from django.core.exceptions import ObjectDoesNotExist
+from django.utils import timezone
+from django_bulk_update.helper import bulk_update
 from rest_framework import status
 from rest_framework.decorators import api_view, authentication_classes, permission_classes
 from rest_framework.permissions import IsAuthenticated
@@ -8,7 +10,8 @@ from authentication.authentication import BasicAuthentication
 from products.models import Product, TYPES, Invoice, InvoiceChanges, STATUSES
 from .serializers import ProductSerializer, ResponsibleFilter, CreateInvoiceSerializer, InvoiceSerializer, \
     CheckInvoiceSerializer, TypeProductFilter
-from ara.error_types import NO_SUCH_PRODUCT, INCORRECT_INVOICE_TYPE, INCORRECT_INVOICE_PRODUCTS
+from ara.error_types import NO_SUCH_PRODUCT, INCORRECT_INVOICE_TYPE, INCORRECT_INVOICE_PRODUCTS, \
+    SOME_PRODUCTS_ARE_IN_TRANSITION, INCORRECT_ID_PATTERN, INVOICE_UPDATE_ERROR
 from .pagination import CountHeaderPagination
 
 
@@ -21,7 +24,7 @@ def get_filters(request):
     return SuccessResponse(filtered_arr, status.HTTP_200_OK)
 
 
-@api_view(['GET', 'PUT'])
+@api_view(['GET'])
 @authentication_classes([BasicAuthentication])
 @permission_classes([IsAuthenticated])
 def show_products(request):
@@ -49,16 +52,41 @@ def show_products(request):
         return SuccessResponse(paginator.get_paginated_response(data).data, status.HTTP_200_OK)
 
 
+@api_view(['GET'])
+@authentication_classes([BasicAuthentication])
+@permission_classes([IsAuthenticated])
+def show_products_for_invoice(request):
+    user = request.user
+    current_account = user.account
+    responsible_filter_serializer = ResponsibleFilter(data=request.query_params)
+    responsible_filter_serializer.is_valid(raise_exception=True)
+    show_own_products = responsible_filter_serializer.validated_data['show_own']
+    paginator = CountHeaderPagination()
+    paginator.page_size_query_param = 'page_size'
+    products_query = []
+    if show_own_products is None:
+        products_query = Product.objects.filter(on_transition=False)
+    elif show_own_products is False:
+        products_query = Product.objects.exclude(responsible=current_account).filter(on_transition=False)
+    elif show_own_products is True:
+        products_query = Product.objects.filter(responsible=current_account, on_transition=False)
+    page = paginator.paginate_queryset(products_query, request)
+    data = ProductSerializer(page, many=True).data
+    return SuccessResponse(paginator.get_paginated_response(data).data, status.HTTP_200_OK)
+
+
 @api_view(['GET', 'PUT'])
 @authentication_classes([BasicAuthentication])
 @permission_classes([IsAuthenticated])
 def show_product(request, product_id):
+    try:
+        product = Product.objects.get(pk=product_id)
+    except ObjectDoesNotExist:
+        return ErrorResponse(NO_SUCH_PRODUCT, status.HTTP_404_NOT_FOUND)
     if request.method == 'GET':
-        try:
-            product = Product.objects.get(pk=product_id)
-        except ObjectDoesNotExist:
-            return ErrorResponse(NO_SUCH_PRODUCT, status.HTTP_404_NOT_FOUND)
         return SuccessResponse(ProductSerializer(product).data, status.HTTP_200_OK)
+    elif request.method == 'PUT':
+        return SuccessResponse()
 
 
 @api_view(['POST'])
@@ -99,13 +127,15 @@ def create_invoice(request):
     invoice_serializer = CreateInvoiceSerializer(data=request.data)
     invoice_serializer.is_valid(raise_exception=True)
     if not invoice_serializer.validated_data['invoice_type'] in TYPES:
-        ErrorResponse(INCORRECT_INVOICE_TYPE, status.HTTP_400_BAD_REQUEST)
+        return ErrorResponse(INCORRECT_INVOICE_TYPE, status.HTTP_400_BAD_REQUEST)
     address = invoice_serializer.get_address()
     print(address.id)
     invoice_type = invoice_serializer.validated_data['invoice_type']
     products = invoice_serializer.validated_data['products']
     comment = invoice_serializer.validated_data['comment']
     target = invoice_serializer.validated_data['target']
+    if len(list(filter(lambda prod: prod.on_transition, products))) != 0:
+        return ErrorResponse(SOME_PRODUCTS_ARE_IN_TRANSITION, status.HTTP_400_BAD_REQUEST)
     filtered_products = list(
         filter(lambda prod: not prod.responsible == user.account, products))
     if len(filtered_products) == len(products):
@@ -148,9 +178,45 @@ def get_invoices(request):
     paginator = CountHeaderPagination()
     paginator.page_size_query_param = 'page_size'
     if current_account.is_admin:
-        invoices = Invoice.objects.all()
+        invoices = Invoice.objects.exclude(status=4)
     else:
-        invoices = Invoice.objects.filter(to_account=current_account)
+        invoices = Invoice.objects.exclude(status=4).filter(to_account=current_account)
     page = paginator.paginate_queryset(invoices, request)
     data = InvoiceSerializer(page, many=True).data
     return SuccessResponse(paginator.get_paginated_response(data).data, status.HTTP_200_OK)
+
+
+@api_view(['PUT'])
+@authentication_classes([BasicAuthentication])
+@permission_classes([IsAuthenticated])
+def update_invoice(request, invoice_id):
+    user = request.user
+    account = user.account
+    try:
+        invoice = Invoice.objects.get(pk=invoice_id)
+    except ObjectDoesNotExist:
+        return ErrorResponse(INCORRECT_ID_PATTERN.format('Заявка', invoice_id), status.HTTP_404_NOT_FOUND)
+    invoice_serializer = InvoiceSerializer(invoice, data=request.data, partial=True)
+    invoice_serializer.is_valid(raise_exception=True)
+    new_status = invoice_serializer.validated_data['status']
+    if new_status - invoice.status != 1 and new_status != 4:
+        return ErrorResponse(INVOICE_UPDATE_ERROR, status.HTTP_400_BAD_REQUEST)
+    if new_status == 3:
+        to_update = []
+        for product in invoice.invoice_lines:
+            product.responsible = invoice.to_account
+            product.responsible_text = invoice.to_account.get_admin_name()
+            product.location_update = timezone.now()
+            to_update.append(product)
+        bulk_update(to_update, update_fields=['responsible', 'responsible_text', 'location_update'])
+    elif new_status != 4:
+        to_update = []
+        for product in invoice.invoice_lines:
+            product.location_update = timezone.now()
+            to_update.append(product)
+        bulk_update(to_update, update_fields=[''])
+    invoice.status = new_status
+    invoice.save()
+    InvoiceChanges.objects.create(invoice=invoice, status=new_status)
+    return SuccessResponse(InvoiceSerializer(invoice).data, status.HTTP_200_OK)
+

@@ -5,6 +5,7 @@ STATUSES = (
     (1, 'В обработке'),
     (2, 'Отдано курьерам'),
     (3, 'Принято от курьера'),
+    (4, 'Закрыто')
 )
 
 TYPES = (
@@ -20,6 +21,7 @@ TARGETS = (
     (3, 'Возврат')
 )
 
+
 class Product(models.Model):
     title = models.CharField(max_length=255)
     sku = models.CharField(max_length=255, unique=True)
@@ -28,10 +30,11 @@ class Product(models.Model):
     year = models.IntegerField(null=True, blank=True)
     responsible = models.ForeignKey('users.Account', models.CASCADE, related_name='products', null=True, blank=True)
     responsible_text = models.CharField(max_length=255, null=True, blank=True)
+    on_transition = models.BooleanField(default=False)
     location_update = models.DateTimeField(null=True)
-    comment = models.CharField(max_length=255)
+    comment = models.CharField(max_length=255, blank=True)
     on_repair = models.BooleanField(default=False)
-    type_filter = models.CharField(max_length=255, null=True, default='', db_index=True)
+    type_filter = models.CharField(max_length=255, null=True, default='', db_index=True, blank=True)
 
     def __str__(self):
         return '{} {}'.format(self.title, self.sku)
@@ -53,6 +56,7 @@ class Invoice(models.Model):
     from_account = models.ForeignKey('users.Account', models.CASCADE, related_name='out_invoices')
     to_account = models.ForeignKey('users.Account', models.CASCADE, related_name='in_invoices')
     target = models.IntegerField(choices=TARGETS, null=True)
+    status = models.IntegerField(choices=STATUSES, default=0)
 
     def __str__(self):
         return '{}.От {} К {}'.format(self.id, self.from_account, self.to_account)
