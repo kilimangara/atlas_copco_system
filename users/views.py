@@ -2,14 +2,14 @@ from django.core.exceptions import ObjectDoesNotExist
 from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes, authentication_classes
 from rest_framework.permissions import IsAuthenticated
-from django.contrib.auth.hashers import make_password
+from django.contrib.auth.hashers import make_password, check_password
 from base64 import b64encode
 
-from ara.error_types import NO_PERMISSION, INCORRECT_ID_PATTERN
+from ara.error_types import NO_PERMISSION, INCORRECT_ID_PATTERN, INVALID_AUTH
 from authentication.authentication import BasicAuthentication
 from users.models import User, AccountEmailCash, Address
 from users.serializers import CreateUserSerializer, UserSerializer, AccountSerializer, ImportUserSerializer, \
-    AddressSerializer, PasswordSerializer
+    AddressSerializer, PasswordSerializer, LoginUserSerializer
 from ara.response import SuccessResponse, ErrorResponse
 
 
@@ -29,8 +29,31 @@ def create_user(request):
     token = to_base64(email, password)
     cash_account = AccountEmailCash.objects.filter(email=email).first()
     account = cash_account.account if cash_account is not None else None
-    user = User.objects.create(email=email, name=name, password=make_password(password), token=token, account=account)
-    return SuccessResponse(UserSerializer(user).data, status.HTTP_201_CREATED)
+    existed_user = User.objects.filter(email=email).first()
+    if existed_user:
+        if check_password(password, existed_user.password):
+            return SuccessResponse(UserSerializer(existed_user).data, status.HTTP_201_CREATED)
+        else:
+            return ErrorResponse(INVALID_AUTH, status.HTTP_400_BAD_REQUEST)
+    else:
+        user = User.objects.create(email=email, name=name, password=make_password(password), token=token, account=account)
+        return SuccessResponse(UserSerializer(user).data, status.HTTP_201_CREATED)
+
+
+@api_view(['POST'])
+def login_user(request):
+    serializer = LoginUserSerializer(data=request.data)
+    serializer.is_valid(raise_exception=True)
+    email = serializer.validated_data['email']
+    password = serializer.validated_data['password']
+    existed_user = User.objects.filter(email=email).first()
+    if existed_user:
+        if check_password(password, existed_user.password):
+            return SuccessResponse(UserSerializer(existed_user).data, status.HTTP_201_CREATED)
+        else:
+            return ErrorResponse(INVALID_AUTH, status.HTTP_400_BAD_REQUEST)
+    else:
+        return ErrorResponse(INVALID_AUTH, status.HTTP_400_BAD_REQUEST)
 
 
 @api_view(['GET', 'PUT'])

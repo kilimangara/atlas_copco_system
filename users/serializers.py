@@ -30,6 +30,11 @@ class CreateUserSerializer(serializers.Serializer, ErrorToString):
         return attrs
 
 
+class LoginUserSerializer(serializers.Serializer, ErrorToString):
+    email = serializers.EmailField()
+    password = serializers.CharField(max_length=50)
+
+
 class AddressSerializer(serializers.ModelSerializer):
 
     class Meta:
