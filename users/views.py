@@ -5,7 +5,7 @@ from rest_framework.permissions import IsAuthenticated
 from django.contrib.auth.hashers import make_password, check_password
 from base64 import b64encode
 
-from ara.error_types import NO_PERMISSION, INCORRECT_ID_PATTERN, INVALID_AUTH
+from ara.error_types import NO_PERMISSION, INCORRECT_ID_PATTERN, INVALID_AUTH, ALREADY_EXIST_USER
 from authentication.authentication import BasicAuthentication
 from users.models import User, AccountEmailCash, Address
 from users.serializers import CreateUserSerializer, UserSerializer, AccountSerializer, ImportUserSerializer, \
@@ -15,7 +15,7 @@ from ara.response import SuccessResponse, ErrorResponse
 
 def to_base64(email, password):
     basify = email + ':' + password
-    return b64encode(basify.encode('ascii')).decode('utf-8')
+    return b64encode(basify.encode()).decode('utf-8')
 
 
 @api_view(['POST'])
@@ -29,12 +29,8 @@ def create_user(request):
     token = to_base64(email, password)
     cash_account = AccountEmailCash.objects.filter(email=email).first()
     account = cash_account.account if cash_account is not None else None
-    existed_user = User.objects.filter(email=email).first()
-    if existed_user:
-        if check_password(password, existed_user.password):
-            return SuccessResponse(UserSerializer(existed_user).data, status.HTTP_201_CREATED)
-        else:
-            return ErrorResponse(INVALID_AUTH, status.HTTP_400_BAD_REQUEST)
+    if User.objects.filter(email=email).first():
+        return ErrorResponse(ALREADY_EXIST_USER, status.HTTP_400_BAD_REQUEST)
     else:
         user = User.objects.create(email=email, name=name, password=make_password(password), token=token, account=account)
         return SuccessResponse(UserSerializer(user).data, status.HTTP_201_CREATED)
