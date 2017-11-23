@@ -24,7 +24,6 @@ class CreateUserSerializer(serializers.Serializer, ErrorToString):
     name = serializers.CharField(max_length=255)
 
     def validate(self, attrs):
-        print(attrs)
         if not attrs['password'] == attrs['password_confirmation']:
             raise ValidationError(PASSWORD_INCORRECT)
         return attrs
@@ -69,7 +68,6 @@ class PasswordSerializer(serializers.Serializer):
     password_confirmation = serializers.CharField(max_length=50)
 
     def validate(self, attrs):
-        print(attrs)
         if not attrs['password'] == attrs['password_confirmation']:
             raise ValidationError(PASSWORD_INCORRECT)
         return attrs

@@ -132,7 +132,6 @@ def create_invoice(request):
     if not invoice_serializer.validated_data['invoice_type'] in TYPES:
         return ErrorResponse(INCORRECT_INVOICE_TYPE, status.HTTP_400_BAD_REQUEST)
     address = invoice_serializer.get_address()
-    print(address.id)
     invoice_type = invoice_serializer.validated_data['invoice_type']
     products = invoice_serializer.validated_data['products']
     comment = invoice_serializer.validated_data['comment']
