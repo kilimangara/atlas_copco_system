@@ -3,9 +3,9 @@ from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
 
 from products.models import Product, Invoice, TARGETS, InvoiceChanges
-from users.models import Address
+from users.models import Address, Account
 from users.serializers import AccountSerializer
-from ara.error_types import ADDRESS_INCONSISTENCY, INCORRECT_TARGET
+from ara.error_types import ADDRESS_INCONSISTENCY, INCORRECT_TARGET, TO_ACCOUNT_REQUIRED
 
 
 class ProductSerializer(serializers.ModelSerializer):
@@ -41,6 +41,7 @@ class CreateInvoiceSerializer(serializers.Serializer):
                                                  required=False)
     comment = serializers.CharField(allow_blank=True, default='')
     target = serializers.IntegerField()
+    to_account = serializers.PrimaryKeyRelatedField(queryset=Account.objects.all())
 
     def validate(self, attrs):
         if 'address' in attrs and 'custom_address' in attrs:
@@ -49,6 +50,8 @@ class CreateInvoiceSerializer(serializers.Serializer):
             raise ValidationError(ADDRESS_INCONSISTENCY)
         elif not attrs['target'] in [0, 1, 2, 3]:
             raise ValidationError(INCORRECT_TARGET)
+        elif 'to_account' not in attrs and attrs['invoice_type'] in [1]:
+            raise ValidationError(TO_ACCOUNT_REQUIRED)
         else:
             return attrs
 

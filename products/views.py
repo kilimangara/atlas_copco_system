@@ -107,13 +107,15 @@ def check_invoice(request):
     if len(filtered_products) == len(invoice_serializer.validated_data['products']):
         account_ids = list(set(map(lambda prod: prod.responsible.id, invoice_serializer.validated_data['products'])))
         if invoice_type == 0:
-            return SuccessResponse({'status': 'ok', 'invoice_type': 0, 'accounts': account_ids}, status.HTTP_200_OK)
+            return SuccessResponse({'status': 'ok', 'invoice_type': 0,
+                                    'from_account': account_ids, 'to_account': request.user.account.id }, status.HTTP_200_OK)
         else:
             return ErrorResponse(INCORRECT_INVOICE_TYPE, status.HTTP_400_BAD_REQUEST)
     elif len(filtered_products) == 0:
         if invoice_type in [1, 2]:
             return SuccessResponse(
-                {'status': 'ok', 'invoice_type': invoice_type, "accounts": [request.user.account.id]},
+                {'status': 'ok', 'invoice_type': invoice_type,
+                 "from_account": [request.user.account.id]},
                 status.HTTP_200_OK)
         else:
             return ErrorResponse(INCORRECT_INVOICE_TYPE, status.HTTP_400_BAD_REQUEST)
@@ -157,7 +159,16 @@ def create_invoice(request):
         else:
             return ErrorResponse(INCORRECT_INVOICE_TYPE, status.HTTP_400_BAD_REQUEST)
     elif len(filtered_products) == 0:
-        if invoice_type == 0:
+        if invoice_type == 1:
+            to_account = invoice_serializer.validated_data['to_account']
+            invoice = Invoice.objects.create(invoice_type=invoice_type, comment=comment,
+                                             address=address, from_account=current_account, to_account=to_account,
+                                             target=target)
+            invoice.invoice_lines.add(*products)
+            invoice.save()
+            InvoiceChanges.objects.create(invoice=invoice, status=0)
+            return SuccessResponse(InvoiceSerializer(invoice).data, status.HTTP_200_OK)
+        elif invoice_type == 2:
             invoice = Invoice.objects.create(invoice_type=invoice_type, comment=comment,
                                              address=address, from_account=current_account, to_account=current_account,
                                              target=target)
