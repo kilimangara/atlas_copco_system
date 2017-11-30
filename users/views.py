@@ -7,7 +7,7 @@ from base64 import b64encode
 
 from ara.error_types import NO_PERMISSION, INCORRECT_ID_PATTERN, INVALID_AUTH, ALREADY_EXIST_USER
 from authentication.authentication import BasicAuthentication
-from users.models import User, AccountEmailCash, Address
+from users.models import User, AccountEmailCash, Address, Account
 from users.serializers import CreateUserSerializer, UserSerializer, AccountSerializer, ImportUserSerializer, \
     AddressSerializer, PasswordSerializer, LoginUserSerializer
 from ara.response import SuccessResponse, ErrorResponse
@@ -104,6 +104,17 @@ def account(request):
         account_serializer.save()
         return SuccessResponse(account_serializer.data, status.HTTP_200_OK)
 
+@api_view(['GET'])
+@authentication_classes([BasicAuthentication])
+@permission_classes([IsAuthenticated])
+def single_account(request, pk):
+    if request.method == 'GET':
+        try:
+            pk_account = Account.objects.get(pk=pk)
+        except ObjectDoesNotExist:
+            return ErrorResponse(INCORRECT_ID_PATTERN.format('Филиал', pk), status.HTTP_404_NOT_FOUND)
+        return SuccessResponse(AccountSerializer(pk_account).data, status.HTTP_200_OK)
+
 
 @api_view(['POST'])
 @authentication_classes([BasicAuthentication])
@@ -126,6 +137,6 @@ def get_addresses(request, address_id):
     try:
         address = Address.objects.get(pk=address_id)
     except ObjectDoesNotExist:
-        return ErrorResponse(INCORRECT_ID_PATTERN.format('Адресс', address_id), status.HTTP_404_NOT_FOUND)
+        return ErrorResponse(INCORRECT_ID_PATTERN.format('Адрес', address_id), status.HTTP_404_NOT_FOUND)
     return SuccessResponse(AddressSerializer(address).data, status.HTTP_200_OK)
 

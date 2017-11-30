@@ -8,5 +8,6 @@ urlpatterns = [
     url(r'^account$', views.account),
     url(r'^account/add_staff$', views.add_to_account),
     url(r'^address/(?P<address_id>\d+)$', views.get_addresses),
-    url(r'^login$', views.login_user)
+    url(r'^login$', views.login_user),
+    url(r'^account/(?P<pk>\d+)$', views.single_account)
 ]
