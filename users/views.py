@@ -18,6 +18,19 @@ def to_base64(email, password):
     return b64encode(basify.encode()).decode('utf-8')
 
 
+@api_view(['GET'])
+@authentication_classes([BasicAuthentication])
+@permission_classes([IsAuthenticated])
+def all_accounts(request):
+    user = request.user
+    current_account = user.account
+    if current_account:
+        accounts = Account.objects.all().exclude(pk=current_account.id)
+    else:
+        accounts = Account.objects.all()
+    return SuccessResponse(AccountSerializer(accounts, many=True).data, status.HTTP_200_OK)
+
+
 @api_view(['POST'])
 def create_user(request):
     serializer = CreateUserSerializer(data=request.data)
