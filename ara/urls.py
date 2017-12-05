@@ -19,5 +19,7 @@ from django.contrib import admin
 urlpatterns = [
     url(r'^admin/', admin.site.urls),
     url(r'^user/', include('users.urls')),
-    url(r'^products/', include('products.urls'))
+    url(r'^products/', include('products.urls')),
+    url(r'^docs/', include('rest_framework_docs.urls'))
+    # url(r'^docs/', get_swagger_view(title='Atlas API'))
 ]
