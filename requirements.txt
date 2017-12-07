@@ -1,8 +1,7 @@
 Django==1.11.4
 pytz==2017.2
-djangorestframework==3.6.3
+djangorestframework==3.7.3
 django-bulk-update==2.1.0
 django-phonenumber-field==1.3.0
 psycopg2
 django-cors-headers
-django-rest-framework-docs

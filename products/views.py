@@ -2,8 +2,9 @@ from django.core.exceptions import ObjectDoesNotExist
 from django.utils import timezone
 from django_bulk_update.helper import bulk_update
 from rest_framework import status
-from rest_framework.decorators import api_view, authentication_classes, permission_classes
+from rest_framework.decorators import api_view, authentication_classes, permission_classes, schema
 from rest_framework.permissions import IsAuthenticated
+from rest_framework.schemas import AutoSchema
 
 from ara.response import SuccessResponse, ErrorResponse
 from authentication.authentication import BasicAuthentication
@@ -19,6 +20,9 @@ from .pagination import CountHeaderPagination
 @authentication_classes([BasicAuthentication])
 @permission_classes([IsAuthenticated])
 def get_filters(request):
+    """
+     Получение всех доступных типов инструментов
+    """
     arr = Product.objects.only('type_filter').distinct('type_filter')
     filtered_arr = map(lambda prod: prod.type_filter, arr)
     return SuccessResponse(filtered_arr, status.HTTP_200_OK)
@@ -28,6 +32,10 @@ def get_filters(request):
 @authentication_classes([BasicAuthentication])
 @permission_classes([IsAuthenticated])
 def show_products(request):
+    """
+    Получение инструментов
+
+    """
     if request.method == 'GET':
         current_account = request.user.account
         responsible_filter_serializer = ResponsibleFilter(data=request.query_params)
@@ -78,6 +86,7 @@ def show_products_for_invoice(request):
 @api_view(['GET', 'PUT'])
 @authentication_classes([BasicAuthentication])
 @permission_classes([IsAuthenticated])
+@schema(AutoSchema())
 def show_product(request, product_id):
     try:
         product = Product.objects.get(pk=product_id)

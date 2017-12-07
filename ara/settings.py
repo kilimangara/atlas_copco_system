@@ -42,7 +42,7 @@ INSTALLED_APPS = [
     'products',
     'rest_framework',
     'corsheaders',
-    'rest_framework_docs'
+    'rest_framework_swagger'
 ]
 
 MIDDLEWARE = [
@@ -104,6 +104,18 @@ REST_FRAMEWORK = {
     'EXCEPTION_HANDLER': 'ara.response.custom_exception_handler',
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.LimitOffsetPagination',
     'PAGE_SIZE': 2
+}
+
+SWAGGER_SETTINGS = {
+    'SECURITY_DEFINITIONS': {
+        'api_key': {
+            'type': 'apiKey',
+            'in': 'header',
+            'name': 'Authorization'
+        }
+    },
+    'USE_SESSION_AUTH': False,
+    'JSON_EDITOR': True,
 }
 
 
