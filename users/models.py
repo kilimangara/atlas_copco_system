@@ -18,7 +18,7 @@ class User(models.Model):
     REQUIRED_FIELDS = []
 
     def __str__(self):
-        return self.email.__str__()
+        return self.name +' '+self.email.__str__()
 
     @property
     def is_anonymous(self):

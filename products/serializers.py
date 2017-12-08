@@ -21,7 +21,11 @@ class ResponsibleFilter(serializers.Serializer):
 
 
 class TypeProductFilter(serializers.Serializer):
-    type_filter = serializers.CharField(max_length=50, default='')
+    type_filter = serializers.CharField(max_length=255, default='')
+
+
+class InnerTypeProductFilter(serializers.Serializer):
+    inner_type_filter = serializers.CharField(max_length=255, default='')
 
 
 class AddressSerializer(serializers.Serializer):
@@ -41,7 +45,7 @@ class CreateInvoiceSerializer(serializers.Serializer):
                                                  required=False)
     comment = serializers.CharField(allow_blank=True, default='')
     target = serializers.IntegerField()
-    to_account = serializers.PrimaryKeyRelatedField(queryset=Account.objects.all())
+    to_account = serializers.PrimaryKeyRelatedField(queryset=Account.objects.all(), required=False)
 
     def validate(self, attrs):
         if 'address' in attrs and 'custom_address' in attrs:
@@ -77,16 +81,15 @@ class InvoiceChangesSerializer(serializers.ModelSerializer):
 
 class InvoiceSerializer(serializers.ModelSerializer):
 
-    from_account = AccountSerializer()
-    to_account = AccountSerializer()
-    invoice_lines = ProductSerializer(many=True)
-    address = AddressSerializer()
-    invoice_changes = InvoiceChangesSerializer(many=True)
-
+    from_account = AccountSerializer(read_only=True)
+    to_account = AccountSerializer(read_only=True)
+    invoice_lines = ProductSerializer(many=True, read_only=True)
+    address = AddressSerializer(read_only=True)
+    invoice_changes = InvoiceChangesSerializer(many=True, read_only=True)
 
     class Meta:
         model = Invoice
         fields = '__all__'
         read_only_fields = ('from_account', 'to_account', 'invoice_lines', 'address', 'created_at', 'updated_at',
-                            'comment', 'target')
+                            'comment', 'target', 'invoice_changes')
 

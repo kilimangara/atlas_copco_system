@@ -1,11 +1,10 @@
 from django.db import models
 
 STATUSES = (
-    (0, 'Создано'),
-    (1, 'В обработке'),
-    (2, 'Отдано курьерам'),
-    (3, 'Принято от курьера'),
-    (4, 'Закрыто')
+    (0, 'В обработке'),
+    (1, 'Отдано курьерам'),
+    (2, 'Принято от курьера'),
+    (3, 'Закрыто')
 )
 
 TYPES = (
@@ -23,21 +22,22 @@ TARGETS = (
 
 
 class Product(models.Model):
-    title = models.CharField(max_length=255)
-    sku = models.CharField(max_length=255, unique=True)
-    number = models.FloatField(blank=True)
-    number_for_order = models.CharField(max_length=10)
+    title = models.CharField(max_length=255, default='')
+    name = models.CharField(max_length=255, default='')
+    number = models.FloatField(blank=True, default=0.0)
+    number_for_order = models.CharField(max_length=255, blank=True, null=True)
     year = models.IntegerField(null=True, blank=True)
     responsible = models.ForeignKey('users.Account', models.CASCADE, related_name='products', null=True, blank=True)
     responsible_text = models.CharField(max_length=255, null=True, blank=True)
     on_transition = models.BooleanField(default=False)
     location_update = models.DateTimeField(null=True)
-    comment = models.CharField(max_length=255, blank=True)
+    comment = models.CharField(max_length=255, blank=True, null=True)
     on_repair = models.BooleanField(default=False)
     type_filter = models.CharField(max_length=255, null=True, default='', db_index=True, blank=True)
+    inner_type_filter = models.CharField(max_length=255, null=True, default='', db_index=True, blank=True)
 
     def __str__(self):
-        return '{} {}'.format(self.title, self.sku)
+        return '{} {}'.format(self.title, self.name)
 
 
 class InvoiceChanges(models.Model):
@@ -49,6 +49,7 @@ class InvoiceChanges(models.Model):
 class Invoice(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now_add=True)
+    track_id = models.CharField(max_length=255, null=True)
     invoice_lines = models.ManyToManyField('Product')
     comment = models.CharField(max_length=255)
     address = models.ForeignKey('users.Address')

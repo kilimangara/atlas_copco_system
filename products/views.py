@@ -10,7 +10,7 @@ from ara.response import SuccessResponse, ErrorResponse
 from authentication.authentication import BasicAuthentication
 from products.models import Product, TYPES, Invoice, InvoiceChanges, STATUSES
 from .serializers import ProductSerializer, ResponsibleFilter, CreateInvoiceSerializer, InvoiceSerializer, \
-    CheckInvoiceSerializer, TypeProductFilter
+    CheckInvoiceSerializer, TypeProductFilter, InnerTypeProductFilter
 from ara.error_types import NO_SUCH_PRODUCT, INCORRECT_INVOICE_TYPE, INCORRECT_INVOICE_PRODUCTS, \
     SOME_PRODUCTS_ARE_IN_TRANSITION, INCORRECT_ID_PATTERN, INVOICE_UPDATE_ERROR
 from .pagination import CountHeaderPagination
@@ -27,6 +27,20 @@ def get_filters(request):
     filtered_arr = map(lambda prod: prod.type_filter, arr)
     return SuccessResponse(filtered_arr, status.HTTP_200_OK)
 
+
+@api_view(['GET'])
+@authentication_classes([BasicAuthentication])
+@permission_classes([IsAuthenticated])
+def get_inner_filters(request):
+    """
+     Получение всех доступных типов инструментов
+    """
+    serializer = TypeProductFilter(data=request.query_params)
+    serializer.is_valid(raise_exception=True)
+    type_filter = serializer.validated_data['type_filter']
+    arr = Product.objects.only('type_filter', 'inner_type_filter').filter(type_filter=type_filter).distinct('inner_type_filter')
+    filtered_arr = map(lambda prod: prod.inner_type_filter, arr)
+    return SuccessResponse(filtered_arr, status.HTTP_200_OK)
 
 @api_view(['GET'])
 @authentication_classes([BasicAuthentication])
@@ -140,7 +154,7 @@ def create_invoice(request):
     current_account = user.account
     invoice_serializer = CreateInvoiceSerializer(data=request.data)
     invoice_serializer.is_valid(raise_exception=True)
-    if not invoice_serializer.validated_data['invoice_type'] in TYPES:
+    if not invoice_serializer.validated_data['invoice_type'] in [0, 1, 2]:
         return ErrorResponse(INCORRECT_INVOICE_TYPE, status.HTTP_400_BAD_REQUEST)
     address = invoice_serializer.get_address()
     invoice_type = invoice_serializer.validated_data['invoice_type']
@@ -158,7 +172,7 @@ def create_invoice(request):
             for account in accounts:
                 account_products = list(filter(lambda pr: pr.responsible.id == account.id, products))
                 invoice = Invoice.objects.create(invoice_type=invoice_type, comment=comment,
-                                                 address=address, from_account=current_account, to_account=account,
+                                                 address=address, from_account=account, to_account=current_account,
                                                  target=target)
                 invoice.invoice_lines.add(*account_products)
                 invoice.save()
@@ -213,7 +227,6 @@ def get_invoices(request):
 @permission_classes([IsAuthenticated])
 def update_invoice(request, invoice_id):
     user = request.user
-    account = user.account
     try:
         invoice = Invoice.objects.get(pk=invoice_id)
     except ObjectDoesNotExist:
@@ -221,24 +234,26 @@ def update_invoice(request, invoice_id):
     invoice_serializer = InvoiceSerializer(invoice, data=request.data, partial=True)
     invoice_serializer.is_valid(raise_exception=True)
     new_status = invoice_serializer.validated_data['status']
-    if new_status - invoice.status != 1 and new_status != 4:
+    track_id = invoice_serializer.validated_data.get('track_id', invoice.track_id)
+    if track_id is None and new_status == 1 and new_status != 3:
+        return ErrorResponse("Нужно указать номер трэкинга", status.HTTP_400_BAD_REQUEST)
+    if new_status - invoice.status != 1 and new_status != 3:
         return ErrorResponse(INVOICE_UPDATE_ERROR, status.HTTP_400_BAD_REQUEST)
-    if new_status == 3:
+    if new_status == 2:
         to_update = []
-        for product in invoice.invoice_lines:
+        for product in invoice.invoice_lines.all():
             product.responsible = invoice.to_account
             product.responsible_text = invoice.to_account.get_admin_name()
             product.location_update = timezone.now()
             to_update.append(product)
         bulk_update(to_update, update_fields=['responsible', 'responsible_text', 'location_update'])
-    elif new_status != 4:
+    elif new_status != 3:
         to_update = []
-        for product in invoice.invoice_lines:
+        for product in invoice.invoice_lines.all():
             product.location_update = timezone.now()
             to_update.append(product)
-        bulk_update(to_update, update_fields=[''])
-    invoice.status = new_status
-    invoice.save()
+        bulk_update(to_update, update_fields=['location_update'])
+    invoice_serializer.save()
     InvoiceChanges.objects.create(invoice=invoice, status=new_status)
-    return SuccessResponse(InvoiceSerializer(invoice).data, status.HTTP_200_OK)
+    return SuccessResponse(invoice_serializer.data, status.HTTP_200_OK)
 
