@@ -68,10 +68,9 @@ class Invoice(models.Model):
 
 @receiver(post_save, sender=Invoice)
 def new_invoice(created, instance, **kwargs):
-    if not created:
-        return
-    to_update = []
-    for product in instance.invoice_lines.all():
-        product.on_transition = True
-        to_update.append(product)
-    bulk_update(to_update, update_fields=['on_transition'])
+    if instance.status == 0 and len(instance.invoice_lines.all()) != 0:
+        to_update = []
+        for product in instance.invoice_lines.all():
+            product.on_transition = True
+            to_update.append(product)
+        bulk_update(to_update, update_fields=['on_transition'])
