@@ -183,7 +183,8 @@ def create_invoice(request):
             return ErrorResponse(INCORRECT_INVOICE_TYPE, status.HTTP_400_BAD_REQUEST)
     elif len(filtered_products) == 0:
         if invoice_type == 1:
-            to_account = invoice_serializer.validated_data['to_account']
+            to_account = current_account if invoice_serializer.validated_data['to_account'] is None\
+                else invoice_serializer.validated_data['to_account']
             invoice = Invoice.objects.create(invoice_type=invoice_type, comment=comment,
                                              address=address, from_account=current_account, to_account=to_account,
                                              target=target)
@@ -192,8 +193,10 @@ def create_invoice(request):
             InvoiceChanges.objects.create(invoice=invoice, status=0)
             return SuccessResponse(InvoiceSerializer(invoice).data, status.HTTP_200_OK)
         elif invoice_type == 2:
+            to_account = current_account if invoice_serializer.validated_data['to_account'] is None \
+                else invoice_serializer.validated_data['to_account']
             invoice = Invoice.objects.create(invoice_type=invoice_type, comment=comment,
-                                             address=address, from_account=current_account, to_account=current_account,
+                                             address=address, from_account=current_account, to_account=to_account,
                                              target=target)
             invoice.invoice_lines.add(*products)
             invoice.save()
