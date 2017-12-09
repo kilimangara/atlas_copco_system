@@ -248,14 +248,15 @@ def update_invoice(request, invoice_id):
             product.responsible = invoice.to_account
             product.responsible_text = invoice.to_account.get_admin_name()
             product.location_update = timezone.now()
+            product.on_transition = False
             to_update.append(product)
-        bulk_update(to_update, update_fields=['responsible', 'responsible_text', 'location_update'])
-    elif new_status != 3:
+        bulk_update(to_update, update_fields=['responsible', 'responsible_text', 'location_update', 'on_transition'])
+    elif new_status == 3:
         to_update = []
         for product in invoice.invoice_lines.all():
-            product.location_update = timezone.now()
+            product.on_transition = False
             to_update.append(product)
-        bulk_update(to_update, update_fields=['location_update'])
+        bulk_update(to_update, update_fields=['on_transition'])
     invoice_serializer.save()
     InvoiceChanges.objects.create(invoice=invoice, status=new_status)
     return SuccessResponse(invoice_serializer.data, status.HTTP_200_OK)

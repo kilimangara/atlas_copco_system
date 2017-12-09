@@ -1,4 +1,7 @@
 from django.db import models
+from django.db.models.signals import post_save
+from django.dispatch import receiver
+from django_bulk_update.helper import bulk_update
 
 STATUSES = (
     (0, 'В обработке'),
@@ -61,3 +64,14 @@ class Invoice(models.Model):
 
     def __str__(self):
         return '{}.От {} К {}'.format(self.id, self.from_account, self.to_account)
+
+
+@receiver(post_save, sender=Invoice)
+def new_invoice(created, instance, **kwargs):
+    if not created:
+        return
+    to_update = []
+    for product in instance.invoice_lines.all():
+        product.on_transition = True
+        to_update.append(product)
+    bulk_update(to_update, update_fields=['on_transition'])
