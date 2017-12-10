@@ -1,4 +1,5 @@
 from django.core.exceptions import ObjectDoesNotExist
+from django.db.models import Q
 from django.utils import timezone
 from django_bulk_update.helper import bulk_update
 from rest_framework import status
@@ -217,9 +218,9 @@ def get_invoices(request):
     paginator = CountHeaderPagination()
     paginator.page_size_query_param = 'page_size'
     if current_account.is_admin:
-        invoices = Invoice.objects.exclude(status=4)
+        invoices = Invoice.objects.all()
     else:
-        invoices = Invoice.objects.exclude(status=4).filter(to_account=current_account)
+        invoices = Invoice.objects.filter(Q(to_account=current_account) | Q(from_account=current_account))
     page = paginator.paginate_queryset(invoices, request)
     data = InvoiceSerializer(page, many=True).data
     return SuccessResponse(paginator.get_paginated_response(data).data, status.HTTP_200_OK)
