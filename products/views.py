@@ -11,7 +11,7 @@ from ara.response import SuccessResponse, ErrorResponse
 from authentication.authentication import BasicAuthentication
 from products.models import Product, TYPES, Invoice, InvoiceChanges, STATUSES
 from .serializers import ProductSerializer, ResponsibleFilter, CreateInvoiceSerializer, InvoiceSerializer, \
-    CheckInvoiceSerializer, TypeProductFilter, InnerTypeProductFilter
+    CheckInvoiceSerializer, TypeProductFilter, InnerTypeProductFilter, StatusFilterSerializer
 from ara.error_types import NO_SUCH_PRODUCT, INCORRECT_INVOICE_TYPE, INCORRECT_INVOICE_PRODUCTS, \
     SOME_PRODUCTS_ARE_IN_TRANSITION, INCORRECT_ID_PATTERN, INVOICE_UPDATE_ERROR
 from .pagination import CountHeaderPagination
@@ -215,18 +215,23 @@ def create_invoice(request):
 def get_invoices(request):
     user = request.user
     current_account = user.account
+    status_serializer = StatusFilterSerializer(data=request.query_params)
+    status_serializer.is_valid(raise_exception=True)
+    status_filter = status_serializer.validated_data['status'] or [0, 1]
     paginator = CountHeaderPagination()
     paginator.page_size_query_param = 'page_size'
     if current_account.is_admin:
-        invoices = Invoice.objects.all()
+        invoices = Invoice.objects.all().order_by('-id').filter(status__in=status_filter)
     else:
-        invoices = Invoice.objects.filter(Q(to_account=current_account) | Q(from_account=current_account))
+        invoices = Invoice.objects\
+            .filter(Q(to_account=current_account) | Q(from_account=current_account) & Q(status__in=status_filter))\
+            .order_by('-id')
     page = paginator.paginate_queryset(invoices, request)
     data = InvoiceSerializer(page, many=True).data
     return SuccessResponse(paginator.get_paginated_response(data).data, status.HTTP_200_OK)
 
 
-@api_view(['PUT'])
+@api_view(['PUT', 'GET'])
 @authentication_classes([BasicAuthentication])
 @permission_classes([IsAuthenticated])
 def update_invoice(request, invoice_id):
@@ -235,6 +240,8 @@ def update_invoice(request, invoice_id):
         invoice = Invoice.objects.get(pk=invoice_id)
     except ObjectDoesNotExist:
         return ErrorResponse(INCORRECT_ID_PATTERN.format('Заявка', invoice_id), status.HTTP_404_NOT_FOUND)
+    if request.method == 'GET':
+        return SuccessResponse(InvoiceSerializer(invoice).data, status.HTTP_200_OK)
     invoice_serializer = InvoiceSerializer(invoice, data=request.data, partial=True)
     invoice_serializer.is_valid(raise_exception=True)
     new_status = invoice_serializer.validated_data['status']

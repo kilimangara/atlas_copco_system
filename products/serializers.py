@@ -27,6 +27,9 @@ class TypeProductFilter(serializers.Serializer):
 class InnerTypeProductFilter(serializers.Serializer):
     inner_type_filter = serializers.CharField(max_length=255, default='')
 
+class StatusFilterSerializer(serializers.Serializer):
+    status = serializers.ListField(child=serializers.IntegerField())
+
 
 class AddressSerializer(serializers.Serializer):
     contact_name = serializers.CharField(max_length=255)
