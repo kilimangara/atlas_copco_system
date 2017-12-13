@@ -46,6 +46,17 @@ def get_inner_filters(request):
 @api_view(['GET'])
 @authentication_classes([BasicAuthentication])
 @permission_classes([IsAuthenticated])
+def get_filters_for_invoice(request):
+    """
+     Получение всех доступных типов инструментов
+    """
+    arr = Product.objects.filter(on_transition=False).only('type_filter').distinct('type_filter')
+    filtered_arr = map(lambda prod: prod.type_filter, arr)
+    return SuccessResponse(filtered_arr, status.HTTP_200_OK)
+
+@api_view(['GET'])
+@authentication_classes([BasicAuthentication])
+@permission_classes([IsAuthenticated])
 def show_products(request):
     """
     Получение инструментов
@@ -83,16 +94,24 @@ def show_products_for_invoice(request):
     current_account = user.account
     responsible_filter_serializer = ResponsibleFilter(data=request.query_params)
     responsible_filter_serializer.is_valid(raise_exception=True)
+    type_filter_serializer = TypeProductFilter(data=request.query_params)
+    type_filter_serializer.is_valid(raise_exception=True)
+    type_filter = type_filter_serializer.validated_data['type_filter']
     show_own_products = responsible_filter_serializer.validated_data['show_own']
     paginator = CountHeaderPagination()
     paginator.page_size_query_param = 'page_size'
     products_query = []
     if show_own_products is None:
-        products_query = Product.objects.filter(on_transition=False)
+        products_query = Product.objects.filter(on_transition=False, type_filter=type_filter) if type_filter != '' \
+            else Product.objects.filter(on_transition=False)
     elif show_own_products is False:
-        products_query = Product.objects.exclude(responsible=current_account).filter(on_transition=False)
+        products_query = Product.objects.exclude(responsible=current_account)\
+            .filter(on_transition=False, type_filter=type_filter) if type_filter != '' \
+            else Product.objects.exclude(responsible=current_account)\
+            .filter(on_transition=False)
     elif show_own_products is True:
-        products_query = Product.objects.filter(responsible=current_account, on_transition=False)
+        products_query = Product.objects.filter(responsible=current_account, on_transition=False, type_filter=type_filter) if type_filter != ''\
+            else Product.objects.filter(on_transition=False, responsible=current_account)
     page = paginator.paginate_queryset(products_query, request)
     data = ProductSerializer(page, many=True).data
     return SuccessResponse(paginator.get_paginated_response(data).data, status.HTTP_200_OK)
