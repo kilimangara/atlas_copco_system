@@ -78,6 +78,12 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'ara.wsgi.application'
 
+# EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+# EMAIL_HOST = 'smtp.yandex.ru'
+# EMAIL_HOST_USER = 'domain_here'
+# EMAIL_HOST_PASSWORD = 'password_here'
+# EMAIL_PORT = 587
+# EMAIL_USE_TLS = True
 
 # Database
 # https://docs.djangoproject.com/en/1.11/ref/settings/#databases

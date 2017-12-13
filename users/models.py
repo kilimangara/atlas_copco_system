@@ -1,5 +1,6 @@
 from django.db import models
 from django.contrib.auth.models import AbstractBaseUser
+from django.core.mail import send_mail, BadHeaderError
 
 from phonenumber_field.modelfields import PhoneNumberField
 
@@ -48,10 +49,13 @@ class Account(models.Model):
     def add_user(self, email):
         user = User.objects.filter(email=email).first()
         if user is None:
-            AccountEmailCash.objects.create(account=self, email=email)
+            # send_mail('Приглашение в систему учета AtlasCopco', 'Вы приглашены - перйдите по ссылке',
+            #           'kilimangara@yandex.ru', [email])
+            AccountEmailCash.objects.update_or_create(account=self, email=email)
             return True
         elif user.account is None:
             user.account = self
+            user.save()
             return True
         return False
 
