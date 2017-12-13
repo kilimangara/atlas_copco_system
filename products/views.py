@@ -240,11 +240,10 @@ def get_invoices(request):
     paginator = CountHeaderPagination()
     paginator.page_size_query_param = 'page_size'
     if current_account.is_admin:
-        invoices = Invoice.objects.all().order_by('-id').filter(status__in=status_filter)
+        invoices = Invoice.objects.filter(status__in=status_filter).order_by('-id')
     else:
-        invoices = Invoice.objects\
-            .filter(Q(to_account=current_account) | Q(from_account=current_account) & Q(status__in=status_filter))\
-            .order_by('-id')
+        invoices = Invoice.objects.filter(Q(status__in=status_filter, to_account=current_account) |
+                                          Q(from_account=current_account, status__in=status_filter)).order_by('-id')
     page = paginator.paginate_queryset(invoices, request)
     data = InvoiceSerializer(page, many=True).data
     return SuccessResponse(paginator.get_paginated_response(data).data, status.HTTP_200_OK)
