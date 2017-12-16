@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/1.11/ref/settings/
 """
 
 import os
+import djcelery
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -78,12 +79,30 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'ara.wsgi.application'
 
-# EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-# EMAIL_HOST = 'smtp.yandex.ru'
-# EMAIL_HOST_USER = 'domain_here'
-# EMAIL_HOST_PASSWORD = 'password_here'
-# EMAIL_PORT = 587
-# EMAIL_USE_TLS = True
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.yandex.ru'
+EMAIL_HOST_USER = 'domain_here'
+EMAIL_HOST_PASSWORD = 'password_here'
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+
+djcelery.setup_loader()
+
+# Celery settings
+# Время, через которое хранимый в результат будет удалён: 5 часов
+CELERY_TASK_RESULT_EXPIRES = 18000
+# Тип бекенда Celery для хранения результатов выполнения заданий
+CELERY_RESULT_BACKEND = "redis"
+# Адрес Redis-сервера
+CELERY_REDIS_HOST = "localhost"
+# Порт Redis-сервера
+CELERY_REDIS_PORT = 6379
+# Нормер Redis Database
+CELERY_REDIS_DB = 0
+
+# Broker settings
+# Адрес броекра. Мы указываем протокол (redis://), адрес сервера (localost), порт (6379) и номер БД (0)
+BROKER_URL = "redis://localhost:6379/0"
 
 # Database
 # https://docs.djangoproject.com/en/1.11/ref/settings/#databases
