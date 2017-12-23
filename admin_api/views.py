@@ -23,14 +23,14 @@ def account_list(request):
 @permission_classes([IsAuthenticated, AdminPermission])
 def user_list(request):
     users = User.objects.all().exclude(pk=request.user.id)
-    return SuccessResponse(UserSerializer(users, many=True), status.HTTP_200_OK)
+    return SuccessResponse(UserSerializer(users, many=True).data, status.HTTP_200_OK)
 
 
 @api_view(['GET'])
 @authentication_classes([BasicAuthentication])
 @permission_classes([IsAuthenticated, AdminPermission])
 def products_list(request):
-    return SuccessResponse(ProductSerializer(Product.objects.all(), many=True), status.HTTP_200_OK)
+    return SuccessResponse(ProductSerializer(Product.objects.all(), many=True).data, status.HTTP_200_OK)
 
 
 @api_view(['GET', 'PUT', 'DELETE'])
@@ -42,7 +42,7 @@ def crud_user(request, user_id):
     except ObjectDoesNotExist:
         return ErrorResponse('Нет такого пользователя', status.HTTP_400_BAD_REQUEST)
     if request.method == 'GET':
-        return SuccessResponse(UserSerializer(user), status.HTTP_200_OK)
+        return SuccessResponse(UserSerializer(user).data, status.HTTP_200_OK)
     elif request.method == 'DELETE':
         user.delete()
         return SuccessResponse(status=status.HTTP_204_NO_CONTENT)
@@ -62,7 +62,7 @@ def crud_product(request, product_id):
     except ObjectDoesNotExist:
         return ErrorResponse('Нет такого инструмента', status.HTTP_400_BAD_REQUEST)
     if request.method == 'GET':
-        return SuccessResponse(ProductSerializer(product), status.HTTP_200_OK)
+        return SuccessResponse(ProductSerializer(product).data, status.HTTP_200_OK)
     elif request.method == 'DELETE':
         product.delete()
         return SuccessResponse(status=status.HTTP_204_NO_CONTENT)
@@ -82,7 +82,7 @@ def crud_account(request, account_id):
     except ObjectDoesNotExist:
         return ErrorResponse('Нет такого филиала', status.HTTP_400_BAD_REQUEST)
     if request.method == 'GET':
-        return SuccessResponse(AccountSerializer(account), status.HTTP_200_OK)
+        return SuccessResponse(AccountSerializer(account).data, status.HTTP_200_OK)
     elif request.method == 'DELETE':
         account.delete()
         return SuccessResponse(status=status.HTTP_204_NO_CONTENT)
