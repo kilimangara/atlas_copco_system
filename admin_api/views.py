@@ -22,7 +22,7 @@ def account_list(request):
 @authentication_classes([BasicAuthentication])
 @permission_classes([IsAuthenticated, AdminPermission])
 def user_list(request):
-    users = User.objects.all().exclide(pk=request.user.id)
+    users = User.objects.all().exclude(pk=request.user.id)
     return SuccessResponse(UserSerializer(users, many=True), status.HTTP_200_OK)
 
 

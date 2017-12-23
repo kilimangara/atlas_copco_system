@@ -99,6 +99,8 @@ CELERY_REDIS_HOST = "localhost"
 CELERY_REDIS_PORT = 6379
 # Нормер Redis Database
 CELERY_REDIS_DB = 0
+CELERY_ACCEPT_CONTENT = ['json']
+CELERY_TASK_SERIALIZER = 'json'
 
 # Broker settings
 # Адрес броекра. Мы указываем протокол (redis://), адрес сервера (localost), порт (6379) и номер БД (0)
