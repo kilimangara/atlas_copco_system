@@ -43,6 +43,7 @@ INSTALLED_APPS = [
     'products',
     'rest_framework',
     'corsheaders',
+    'django_celery_results'
 ]
 
 MIDDLEWARE = [
@@ -81,30 +82,11 @@ WSGI_APPLICATION = 'ara.wsgi.application'
 
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST = 'smtp.yandex.ru'
-EMAIL_HOST_USER = 'domain_here'
-EMAIL_HOST_PASSWORD = 'password_here'
+EMAIL_HOST_USER = 'kilimangara@yandex.ru'
+EMAIL_HOST_PASSWORD = 'Maria_And_Grey131196'
 EMAIL_PORT = 587
 EMAIL_USE_TLS = True
 
-djcelery.setup_loader()
-
-# Celery settings
-# Время, через которое хранимый в результат будет удалён: 5 часов
-CELERY_TASK_RESULT_EXPIRES = 18000
-# Тип бекенда Celery для хранения результатов выполнения заданий
-CELERY_RESULT_BACKEND = "redis"
-# Адрес Redis-сервера
-CELERY_REDIS_HOST = "localhost"
-# Порт Redis-сервера
-CELERY_REDIS_PORT = 6379
-# Нормер Redis Database
-CELERY_REDIS_DB = 0
-CELERY_ACCEPT_CONTENT = ['json']
-CELERY_TASK_SERIALIZER = 'json'
-
-# Broker settings
-# Адрес броекра. Мы указываем протокол (redis://), адрес сервера (localost), порт (6379) и номер БД (0)
-BROKER_URL = "redis://localhost:6379/0"
 
 # Database
 # https://docs.djangoproject.com/en/1.11/ref/settings/#databases
@@ -176,6 +158,14 @@ USE_I18N = True
 USE_L10N = True
 
 USE_TZ = True
+
+CELERY_BROKER_URL = 'redis://localhost:6379'
+CELERY_RESULT_BACKEND = 'django-db'
+CELERY_ACCEPT_CONTENT = ['application/json']
+CELERY_TASK_SERIALIZER = 'json'
+CELERY_RESULT_SERIALIZER = 'json'
+CELERY_TIMEZONE = TIME_ZONE
+CELERY_IMPORTS = ['users.tasks', 'products.tasks']
 
 
 # Static files (CSS, JavaScript, Images)

@@ -16,7 +16,6 @@ from ara.error_types import NO_SUCH_PRODUCT, INCORRECT_INVOICE_TYPE, INCORRECT_I
     SOME_PRODUCTS_ARE_IN_TRANSITION, INCORRECT_ID_PATTERN, INVOICE_UPDATE_ERROR
 from .pagination import CountHeaderPagination
 
-
 @api_view(['GET'])
 @authentication_classes([BasicAuthentication])
 @permission_classes([IsAuthenticated])

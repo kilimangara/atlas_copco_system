@@ -8,5 +8,4 @@ django-cors-headers
 openpyxl
 redis
 celery
-celery-with-redis
-django-celery
+django-celery-results

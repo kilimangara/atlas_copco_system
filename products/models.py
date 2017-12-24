@@ -1,3 +1,5 @@
+from datetime import datetime, timedelta
+
 from django.db import models
 from django.db.models.signals import post_save
 from django.dispatch import receiver
@@ -68,8 +70,14 @@ class Invoice(models.Model):
 
 @receiver(post_save, sender=Invoice)
 def new_invoice(created, instance, **kwargs):
+    if instance.status == 1:
+        time_to_check = datetime.utcnow() + timedelta(days=5)
+        from .tasks import check_invoice_status
+        check_invoice_status.apply_async((instance.id,), eta=time_to_check)
     if instance.status == 0 and len(instance.invoice_lines.all()) != 0:
         to_update = []
+        from .tasks import send_notification
+        send_notification.delay(instance.id)
         for product in instance.invoice_lines.all():
             product.on_transition = True
             to_update.append(product)
