@@ -38,7 +38,7 @@ def products_list(request):
 @permission_classes([IsAuthenticated, AdminPermission])
 def crud_user(request, user_id):
     try:
-        user = User.objects.find(pk=user_id)
+        user = User.objects.get(pk=user_id)
     except ObjectDoesNotExist:
         return ErrorResponse('Нет такого пользователя', status.HTTP_400_BAD_REQUEST)
     if request.method == 'GET':
@@ -58,7 +58,7 @@ def crud_user(request, user_id):
 @permission_classes([IsAuthenticated, AdminPermission])
 def crud_product(request, product_id):
     try:
-        product = Product.objects.find(pk=product_id)
+        product = Product.objects.get(pk=product_id)
     except ObjectDoesNotExist:
         return ErrorResponse('Нет такого инструмента', status.HTTP_400_BAD_REQUEST)
     if request.method == 'GET':
@@ -78,7 +78,7 @@ def crud_product(request, product_id):
 @permission_classes([IsAuthenticated, AdminPermission])
 def crud_account(request, account_id):
     try:
-        account = Account.objects.find(pk=account_id)
+        account = Account.objects.get(pk=account_id)
     except ObjectDoesNotExist:
         return ErrorResponse('Нет такого филиала', status.HTTP_400_BAD_REQUEST)
     if request.method == 'GET':
