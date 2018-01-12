@@ -1,7 +1,7 @@
 from datetime import datetime, timedelta
 
 from django.db import models
-from django.db.models.signals import post_save
+from django.db.models.signals import post_save, pre_save
 from django.dispatch import receiver
 from django_bulk_update.helper import bulk_update
 
@@ -66,6 +66,12 @@ class Invoice(models.Model):
 
     def __str__(self):
         return '{}.От {} К {}'.format(self.id, self.from_account, self.to_account)
+
+
+@receiver(pre_save, sender=Product)
+def product_changed(instance, **kwargs):
+    if instance.responsible:
+        instance.responsible_text = instance.responsible.get_admin_name()
 
 
 @receiver(post_save, sender=Invoice)

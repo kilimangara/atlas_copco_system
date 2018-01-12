@@ -7,6 +7,7 @@ from admin_api.permissions import AdminPermission
 from ara.response import SuccessResponse, ErrorResponse
 from authentication.authentication import BasicAuthentication
 from products.models import Product
+from products.pagination import CountHeaderPagination
 from users.models import Account, User
 from .serializers import AccountSerializer, UserSerializer, ProductSerializer
 
@@ -26,11 +27,21 @@ def user_list(request):
     return SuccessResponse(UserSerializer(users, many=True).data, status.HTTP_200_OK)
 
 
-@api_view(['GET'])
+@api_view(['GET', 'POST'])
 @authentication_classes([BasicAuthentication])
 @permission_classes([IsAuthenticated, AdminPermission])
 def products_list(request):
-    return SuccessResponse(ProductSerializer(Product.objects.all(), many=True).data, status.HTTP_200_OK)
+    if request.method == 'POST':
+        serializer = ProductSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return SuccessResponse(serializer.data, status.HTTP_201_CREATED)
+    paginator = CountHeaderPagination()
+    paginator.page_size_query_param = 'page_size'
+    products_query = Product.objects.all()
+    page = paginator.paginate_queryset(products_query, request)
+    data = ProductSerializer(page, many=True).data
+    return SuccessResponse(data, status.HTTP_200_OK)
 
 
 @api_view(['GET', 'PUT', 'DELETE'])
