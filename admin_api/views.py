@@ -41,7 +41,7 @@ def products_list(request):
     products_query = Product.objects.all()
     page = paginator.paginate_queryset(products_query, request)
     data = ProductSerializer(page, many=True).data
-    return SuccessResponse(data, status.HTTP_200_OK)
+    return SuccessResponse(paginator.get_paginated_response(data).data, status.HTTP_200_OK)
 
 
 @api_view(['GET', 'PUT', 'DELETE'])
